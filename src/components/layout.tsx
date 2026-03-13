@@ -6,12 +6,13 @@
  */
 
 import * as React from "react"
-import { useStaticQuery, graphql } from "gatsby"
+import { useStaticQuery, graphql, Link } from "gatsby"
 
 import Header from "./header"
+import { VaquitaProvider } from "../contexts/VaquitaContext"
 import "./layout.css"
 
-const Layout = ({ children }) => {
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const data = useStaticQuery(graphql`
     query SiteTitleQuery {
       site {
@@ -23,7 +24,7 @@ const Layout = ({ children }) => {
   `)
 
   return (
-    <>
+    <VaquitaProvider>
       <Header siteTitle={data.site.siteMetadata?.title || `Title`} />
       <div
         style={{
@@ -44,8 +45,25 @@ const Layout = ({ children }) => {
           <a href="https://www.gatsbyjs.com">Gatsby</a>
         </footer>
       </div>
-    </>
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        width: '100%',
+        background: '#fff',
+        borderTop: '1px solid #ccc',
+        display: 'flex',
+        justifyContent: 'space-around',
+        padding: '10px 0',
+      }}>
+        <Link to="/shared-pay">Shared Pay</Link>
+        <Link to="/randomizer">Randomizer</Link>
+        <Link to="/value-weight">Value Weight</Link>
+        <Link to="/pay-later">Pay Later</Link>
+      </nav>
+    </VaquitaProvider>
   )
 }
+
+export default Layout
 
 export default Layout
