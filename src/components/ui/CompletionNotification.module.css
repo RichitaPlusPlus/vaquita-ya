@@ -1,0 +1,83 @@
+.notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateZ(50px);
+  background: #ff0;
+  border: 6px solid #000;
+  padding: 2rem;
+  z-index: 1000;
+  box-shadow: 20px 20px 0 #000;
+  animation: bounceIn 0.5s ease-out;
+}
+
+.content {
+  text-align: center;
+  position: relative;
+}
+
+.content h2 {
+  margin: 0 0 1rem 0;
+  font-size: 2rem;
+  color: #000;
+  text-shadow: 2px 2px 0 #fff;
+}
+
+.content p {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.confetti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confettiPiece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  animation: fall 3s linear infinite;
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: translate(-50%, -50%) translateZ(50px) scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) translateZ(50px) scale(1.05);
+  }
+  70% {
+    transform: translate(-50%, -50%) translateZ(50px) scale(0.9);
+  }
+  100% {
+    transform: translate(-50%, -50%) translateZ(50px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .notification {
+    padding: 1rem;
+  }
+
+  .content h2 {
+    font-size: 1.5rem;
+  }
+}

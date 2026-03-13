@@ -48,6 +48,8 @@ export interface VaquitaState {
   valueWeight: number;
   /** Logic for "Pay Later" including interest rates and negotiation status. */
   debtMarket: DebtMarket;
+  /** Whether to show completion notification. */
+  showCompletion: boolean;
 }
 
 /**
@@ -72,6 +74,8 @@ export interface DebtEntry {
   dueDate: Date;
   /** Note about interest or negotiation fee. */
   interestNote: string;
+  /** Calculated interest amount. */
+  interest: number;
   /** Status of the debt. */
   status: 'pending' | 'agreed' | 'paid';
 }

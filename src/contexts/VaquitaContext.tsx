@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { VaquitaState, Participant, Product, DebtEntry } from '../types';
+import { useVaquitaEngine } from '../hooks/useVaquitaEngine';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 /**
  * Actions for the Vaquita reducer.
@@ -15,8 +17,10 @@ type VaquitaAction =
   | { type: 'SET_VALUE_WEIGHT'; payload: number }
   | { type: 'ADD_DEBT'; payload: DebtEntry }
   | { type: 'UPDATE_DEBT'; payload: { id: string; updates: Partial<DebtEntry> } }
+  | { type: 'UPDATE_PARTICIPANTS_BALANCES'; payload: Participant[] }
   | { type: 'HYDRATE_STATE'; payload: VaquitaState }
-  | { type: 'RESET_STATE' };
+  | { type: 'RESET_STATE' }
+  | { type: 'SHOW_COMPLETION'; payload: boolean };
 
 /**
  * Initial state for the Vaquita context.
@@ -28,6 +32,7 @@ const initialState: VaquitaState = {
   products: [],
   valueWeight: 0,
   debtMarket: { debts: [] },
+  showCompletion: false,
 };
 
 /**
@@ -94,10 +99,14 @@ function vaquitaReducer(state: VaquitaState, action: VaquitaAction): VaquitaStat
           ),
         },
       };
+    case 'UPDATE_PARTICIPANTS_BALANCES':
+      return { ...state, participants: action.payload };
     case 'HYDRATE_STATE':
       return action.payload;
     case 'RESET_STATE':
       return initialState;
+    case 'SHOW_COMPLETION':
+      return { ...state, showCompletion: action.payload };
     default:
       return state;
   }
@@ -112,6 +121,7 @@ const VaquitaContext = createContext<{
   calculateSplits: () => void;
   persistenceProvider: () => void;
   transactionHandler: (participantId: string) => void;
+  resetVaquita: () => void;
 } | null>(null);
 
 /**
@@ -119,44 +129,51 @@ const VaquitaContext = createContext<{
  */
 export const VaquitaProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(vaquitaReducer, initialState);
+  const [storedState, setStoredState, removeStoredState] = useLocalStorage<VaquitaState>('VAQUITA_CORE_DATA', initialState);
+  const engine = useVaquitaEngine(state);
+
+  // Hydrate on mount
+  useEffect(() => {
+    if (storedState && storedState.participants.length > 0) {
+      dispatch({ type: 'HYDRATE_STATE', payload: storedState });
+    }
+  }, [storedState]);
+
+  // Auto-save on state change
+  useEffect(() => {
+    setStoredState(state);
+  }, [state, setStoredState]);
 
   /**
-   * Calculates the splits based on the sharing mode.
+   * Resets all data and starts a new Vaquita.
    */
-  const calculateSplits = () => {
-    const { sharingMode, totalAmount, participants, valueWeight } = state;
-    let updatedParticipants = [...participants];
-
-    if (sharingMode === 'equal') {
-      const share = totalAmount / participants.length;
-      updatedParticipants = participants.map(p => ({ ...p, currentBalance: share - p.initialContribution }));
-    } else if (sharingMode === 'weighted') {
-      // Subtract valueWeight from total, then divide equally
-      const adjustedTotal = totalAmount - valueWeight;
-      const share = adjustedTotal / participants.length;
-      updatedParticipants = participants.map(p => ({ ...p, currentBalance: share - p.initialContribution }));
-    } else if (sharingMode === 'debt-negotiation') {
-      // Handle debts, but for now, simple equal
-      const share = totalAmount / participants.length;
-      updatedParticipants = participants.map(p => ({ ...p, currentBalance: share - p.initialContribution }));
-    }
-
-    // Dispatch updates
-    updatedParticipants.forEach(p => {
-      dispatch({ type: 'UPDATE_PARTICIPANT', payload: { id: p.id, updates: { currentBalance: p.currentBalance } } });
-    });
+  const resetVaquita = () => {
+    removeStoredState();
+    dispatch({ type: 'RESET_STATE' });
   };
 
   /**
-   * Handles persistence to LocalStorage.
+   * Calculates the splits based on the current sharing mode.
+   */
+  const calculateSplits = () => {
+    let splits: Participant[];
+    if (state.sharingMode === 'equal') {
+      splits = engine.calculateEqualSplits();
+    } else if (state.sharingMode === 'weighted') {
+      const payerId = state.participants.find(p => p.initialContribution > 0)?.id || state.participants[0]?.id || '';
+      splits = engine.calculateWeightedSplits(state.valueWeight, payerId);
+    } else {
+      // debt-negotiation: keep current balances or handle differently
+      splits = state.participants;
+    }
+    dispatch({ type: 'UPDATE_PARTICIPANTS_BALANCES', payload: splits });
+  };
+
+  /**
+   * Forces persistence of the current state.
    */
   const persistenceProvider = () => {
-    // Auto-save to LocalStorage
-    try {
-      localStorage.setItem('VAQUITA_CORE_DATA', JSON.stringify(state));
-    } catch (error) {
-      console.error('Failed to save to LocalStorage:', error);
-    }
+    setStoredState(state);
   };
 
   /**
@@ -164,33 +181,18 @@ export const VaquitaProvider: React.FC<{ children: ReactNode }> = ({ children })
    */
   const transactionHandler = (participantId: string) => {
     dispatch({ type: 'UPDATE_PARTICIPANT', payload: { id: participantId, updates: { status: 'paid' } } });
-    // Check if all paid, trigger alert
-    const allPaid = state.participants.every(p => p.status === 'paid');
-    if (allPaid) {
-      alert('All participants have paid! Celebration time!');
+    // Check if all paid, trigger completion
+    const updatedParticipants = state.participants.map(p =>
+      p.id === participantId ? { ...p, status: 'paid' as const } : p
+    );
+    const allPaid = updatedParticipants.every(p => p.status === 'paid');
+    if (allPaid && state.participants.length > 0) {
+      dispatch({ type: 'SHOW_COMPLETION', payload: true });
     }
   };
 
-  // Hydrate on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('VAQUITA_CORE_DATA');
-      if (saved) {
-        const parsedState = JSON.parse(saved);
-        dispatch({ type: 'HYDRATE_STATE', payload: parsedState });
-      }
-    } catch (error) {
-      console.error('Failed to hydrate from LocalStorage:', error);
-    }
-  }, []);
-
-  // Auto-save on state change
-  useEffect(() => {
-    persistenceProvider();
-  }, [state]);
-
   return (
-    <VaquitaContext.Provider value={{ state, dispatch, calculateSplits, persistenceProvider, transactionHandler }}>
+    <VaquitaContext.Provider value={{ state, dispatch, calculateSplits, persistenceProvider, transactionHandler, resetVaquita }}>
       {children}
     </VaquitaContext.Provider>
   );

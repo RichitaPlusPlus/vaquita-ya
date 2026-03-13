@@ -9,10 +9,49 @@ import * as React from "react"
 import { useStaticQuery, graphql, Link } from "gatsby"
 
 import Header from "./header"
-import { VaquitaProvider } from "../contexts/VaquitaContext"
+import { VaquitaProvider, useVaquita } from "../contexts/VaquitaContext"
+import CompletionNotification from "./ui/CompletionNotification"
 import "./layout.css"
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const VaquitaBar = () => {
+  const { state, dispatch } = useVaquita()
+
+  const closeCompletion = () => {
+    dispatch({ type: 'SHOW_COMPLETION', payload: false });
+  };
+
+  return (
+    <>
+      {state.showCompletion && <CompletionNotification onClose={closeCompletion} />}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        background: '#fff',
+        border: '2px solid #000',
+        padding: '0.5rem',
+        maxWidth: '200px',
+        zIndex: 100,
+        transform: 'translateZ(10px)',
+        boxShadow: '4px 4px 0 #000',
+      }}>
+        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem' }}>Vaquita Status</h3>
+        {state.participants.map(p => (
+          <div key={p.id} style={{
+            fontSize: '0.7rem',
+            marginBottom: '0.25rem',
+            color: p.status === 'paid' ? '#0f0' : '#f00',
+            fontWeight: 'bold'
+          }}>
+            {p.name}: {p.status}
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+const Layout = ({ children }) => {
   const data = useStaticQuery(graphql`
     query SiteTitleQuery {
       site {
@@ -25,6 +64,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <VaquitaProvider>
+      <VaquitaBar />
       <Header siteTitle={data.site.siteMetadata?.title || `Title`} />
       <div
         style={{
@@ -59,11 +99,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Link to="/randomizer">Randomizer</Link>
         <Link to="/value-weight">Value Weight</Link>
         <Link to="/pay-later">Pay Later</Link>
+        <Link to="/gallery">Gallery</Link>
       </nav>
     </VaquitaProvider>
   )
 }
-
-export default Layout
 
 export default Layout

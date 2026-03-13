@@ -5,7 +5,7 @@ import StatusToggle from '../components/ui/StatusToggle';
 import NeubrutalistForm from '../components/ui/NeubrutalistForm';
 import ContributionSlider from '../components/ui/ContributionSlider';
 import SmartChecklist from '../components/ui/SmartChecklist';
-import styles from './Gallery.module.css';
+import styles from './gallery.module.css';
 
 /**
  * Gallery page to preview all 3D UI components.

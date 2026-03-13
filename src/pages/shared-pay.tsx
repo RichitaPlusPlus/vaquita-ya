@@ -1,14 +1,18 @@
-import * as React from "react"
+import React, { useState } from "react"
 import Layout from "../components/layout"
 import { useVaquita } from "../contexts/VaquitaContext"
+import { useVaquitaEngine } from "../hooks/useVaquitaEngine"
 import Action3DButton from "../components/ui/Action3DButton"
 import StatusToggle from "../components/ui/StatusToggle"
 import NeubrutalistForm from "../components/ui/NeubrutalistForm"
 import ContributionSlider from "../components/ui/ContributionSlider"
 import SmartChecklist from "../components/ui/SmartChecklist"
+import Dropzone from "../components/ui/Dropzone"
 
 const SharedPayPage = () => {
-  const { state, dispatch, calculateSplits, transactionHandler } = useVaquita()
+  const { state, dispatch, calculateSplits, transactionHandler, resetVaquita } = useVaquita()
+  const engine = useVaquitaEngine(state)
+  const [productImage, setProductImage] = useState('')
 
   const handleAddParticipant = (name: string) => {
     const newParticipant = {
@@ -28,8 +32,10 @@ const SharedPayPage = () => {
       price: 10, // default
       quantity: 1,
       description: '',
+      imagePreview: productImage,
     }
     dispatch({ type: 'ADD_PRODUCT', payload: newProduct })
+    setProductImage('')
   }
 
   const checklistItems = state.products.map(p => ({
@@ -50,7 +56,9 @@ const SharedPayPage = () => {
 
       <section>
         <h2>Add Product</h2>
+        <Dropzone onImageSelect={setProductImage} currentImage={productImage} />
         <NeubrutalistForm onSubmit={handleAddProduct} placeholder="Product name" buttonLabel="Add Product" />
+        <p style={{ fontSize: '0.8rem', color: '#666' }}>Images are compressed and stored locally. They won't persist if browser cache is cleared.</p>
       </section>
 
       <section>
@@ -77,6 +85,7 @@ const SharedPayPage = () => {
       </section>
 
       <Action3DButton label="Calculate Splits" onClick={calculateSplits} />
+      <Action3DButton label="Reset Vaquita" onClick={resetVaquita} />
     </Layout>
   )
 }

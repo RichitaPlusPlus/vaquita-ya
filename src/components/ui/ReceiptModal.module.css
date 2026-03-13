@@ -1,0 +1,73 @@
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.content {
+  position: relative;
+  background: #fff;
+  border: 6px solid #000;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 20px 20px 0 #000;
+  transform: translateZ(20px);
+}
+
+.content h2 {
+  margin-top: 0;
+  color: #000;
+  text-shadow: 2px 2px 0 #ff0;
+}
+
+.receipt {
+  background: #f0f0f0;
+  border: 2px solid #000;
+  padding: 1rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+    width: 95%;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .receipt {
+    font-size: 0.8rem;
+  }
+}
