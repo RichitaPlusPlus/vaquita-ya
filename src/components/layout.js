@@ -59,7 +59,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Link to="/randomizer">Randomizer</Link>
         <Link to="/value-weight">Value Weight</Link>
         <Link to="/pay-later">Pay Later</Link>
-        <Link to="/gallery">Gallery</Link>
       </nav>
     </VaquitaProvider>
   )
